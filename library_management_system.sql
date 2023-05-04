@@ -547,21 +547,35 @@ group by type_of_payment;
 -- ------------------------------------------------------
 -- Amount of transaction.
 SELECT 
-    TO_CHAR(br.borrow_date, 'Month') AS "month", 
-    COUNT(DISTINCT br.transactionID) AS total_transactions
-FROM borrowing_transactions br
-GROUP BY TO_CHAR(br.borrow_date, 'Month');
+    DATE_FORMAT(b.borrow_date, '%m') AS month, 
+    COUNT(DISTINCT b.transactionID) AS total_transactions
+FROM borrowing_transactions b
+GROUP BY month
+ORDER BY month;
+
+
+SELECT 
+    DATE_FORMAT(rt.return_date, '%m') AS month, 
+    COUNT(DISTINCT rt.transactionID) AS total_transactions
+FROM returning_transactions rt
+GROUP BY month
+ORDER BY month;
+
+
+SELECT  
+    TO_CHAR(rt.return_date, 'Month') AS "month", 
+    COUNT(DISTINCT rt.transactionID) AS total_transactions,
+    TO_NUMBER(TO_CHAR(rt.return_date, 'MM')) AS month_number
+FROM returning_transactions rt
+GROUP BY TO_CHAR(rt.return_date, 'Month'), TO_NUMBER(TO_CHAR(rt.return_date, 'MM'))
+ORDER BY month_number; -- can only be run via oracle apex
 
 
 SELECT 
     TO_CHAR(rt.return_date, 'Month') AS "month", 
-    COUNT(DISTINCT rt.transactionID) AS total_transactions
+    COUNT(DISTINCT rt.transactionID) AS total_transactions,
+    TO_NUMBER(TO_CHAR(rt.return_date, 'MM')) AS month_number
 FROM returning_transactions rt
-GROUP BY TO_CHAR(rt.return_date, 'Month')
-ORDER BY TO_CHAR(rt.return_date, 'Month');
+GROUP BY TO_CHAR(rt.return_date, 'Month'), TO_NUMBER(TO_CHAR(rt.return_date, 'MM'))
+ORDER BY month_number; -- can only be run via oracle apex
 -- ------------------------------------------------------
-
-
-
-
-
