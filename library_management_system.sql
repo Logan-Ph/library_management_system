@@ -1,7 +1,6 @@
 create database library_management_system;
 use library_management_system;
 
-
 create table Items(
 	itemID  CHAR(50) primary key,
     title CHAR(50),
@@ -145,7 +144,7 @@ create table Fines (
 	FOREIGN KEY (transactionID ) REFERENCES Transactions(transactionID )
 );
 
-create table Returnning_transactions(
+create table Returning_transactions(
 	transactionID CHAR(50),
 	return_date DATETIME NOT NULL,
 	PRIMARY KEY (transactionID),
@@ -420,7 +419,7 @@ VALUES
 ('t13', 'u2', 100, 'not paid', null),
 ('t14', 'u9', 100, 'not paid', null);
     
-INSERT INTO returnning_transactions (transactionID, return_date)
+INSERT INTO returning_transactions (transactionID, return_date)
 VALUES
 ('t15', '2022-02-03 14:23:00'),
 ('t16', '2022-02-05 22:10:00'),
@@ -452,9 +451,11 @@ VALUES
 
 -- ------------------------------------------------------
 -- Percentage of gender
-SELECT COUNT(userID) as number_of_gender, gender
-FROM Library_users
-GROUP BY gender;
+SELECT GENDER, COUNT(GENDER) * 100.0 / (SUM(COUNT(*)) OVER()) AS PERCENTAGE_OF_GENDER
+FROM LIBRARY_USERS
+WHERE GENDER IS NOT NULL
+GROUP BY GENDER
+ORDER BY 2 DESC;
 -- ------------------------------------------------------
 
 
@@ -465,11 +466,6 @@ SELECT count(tran.itemID) * 100.0 / (sum(count(*)) over()) as percentage_of_genr
 FROM Items AS item RIGHT JOIN transactions AS tran
 ON tran.itemID = item.itemID
 GROUP BY item.genre;
-
-SELECT count(tran.itemID) as number_of_genre, item.genre
-FROM Items AS item RIGHT JOIN transactions AS tran
-ON tran.itemID = item.itemID
-GROUP BY item.genre;
 -- ------------------------------------------------------
 
 
@@ -477,9 +473,9 @@ GROUP BY item.genre;
 -- ------------------------------------------------------
 -- Amount of copies based on genre
 select count(copy.copyID) as amount_of_copy, item.genre
-from Copies as copy cross join items as item
+from Copies as copy join items as item
 on item.itemID = copy.itemID
-group by item.itemID;
+group by item.genre;
 -- ------------------------------------------------------
 
 
@@ -494,8 +490,8 @@ select * from Authors order by authorID DESC;
 -- ------------------------------------------------------
 -- Report of  assistant works. 
 select assist.time as assist_time, library_users.name as user_name, Library_staff.name as tutor_name 
-from assist cross join library_users cross join Library_staff
-on library_users.userID = assist.userID and assist.staffID = Library_staff.staffID;
+from assist join library_users join Library_staff 
+on library_users.userID = assist.userID and assist.staffID = Library_staff.staffID and library_users.userID <> library_staff.userID;
 -- ------------------------------------------------------
 
 
@@ -509,16 +505,22 @@ and paid.transactionID <> not_paid.transactionID;
 -- ------------------------------------------------------
 
 
+
 -- ------------------------------------------------------
 -- Percentage of favorite kinds of books based on gender. 
-SELECT distinct transactions.transactionID, Items.genre, library_users.gender
-FROM Items cross JOIN transactions right join library_users
-ON transactions.itemID = Items.itemID and library_users.userID is not null and library_users.gender = "male"; -- for male
+SELECT Items.genre, count(items.genre) * 100.0 / (sum(count(*)) over()) as number_of_genre
+FROM transactions
+JOIN library_users on library_users.userID = transactions.userID and library_users.gender = 'male'
+join items
+ON transactions.itemID = items.itemID
+group by items.genre; -- for male
 
-SELECT distinct transactions.transactionID, Items.genre, library_users.gender
-FROM Items cross JOIN transactions right join library_users
-ON transactions.itemID = Items.itemID and library_users.userID is not null and library_users.gender = "female"; -- for female
--- ------------------------------------------------------
+SELECT Items.genre, count(items.genre) * 100.0 / (sum(count(*)) over()) as number_of_genre
+FROM transactions
+JOIN library_users on library_users.userID = transactions.userID and library_users.gender = 'Female'
+join items
+ON transactions.itemID = items.itemID
+group by items.genre; -- for female
 
 
 
@@ -536,28 +538,30 @@ where fines.payment_status = "not paid";
 -- Report types of payment( cash, banking, card,...) -> Add 1 more attribute on Fines entity and 1 data column on Fines Table. 
 select count(type_of_payment) as number, type_of_payment
 from fines 
+where type_of_payment is not null
 group by type_of_payment;
 -- ------------------------------------------------------
+
 
 
 -- ------------------------------------------------------
 -- Amount of transaction.
 SELECT 
-    DATE_FORMAT(b.borrow_date, '%m') AS month, 
-    COUNT(DISTINCT b.transactionID) AS total_transactions
-FROM borrowing_transactions b
-GROUP BY month
-HAVING total_transactions > 0
-ORDER BY month;
+    TO_CHAR(br.borrow_date, 'Month') AS "month", 
+    COUNT(DISTINCT br.transactionID) AS total_transactions
+FROM borrowing_transactions br
+GROUP BY TO_CHAR(br.borrow_date, 'Month');
 
 
 SELECT 
-    DATE_FORMAT(rt.return_date, '%m') AS month, 
+    TO_CHAR(rt.return_date, 'Month') AS "month", 
     COUNT(DISTINCT rt.transactionID) AS total_transactions
-FROM returnning_transactions rt
-GROUP BY month
-HAVING total_transactions > 0
-ORDER BY month;
+FROM returning_transactions rt
+GROUP BY TO_CHAR(rt.return_date, 'Month')
+ORDER BY TO_CHAR(rt.return_date, 'Month');
 -- ------------------------------------------------------
+
+
+
 
 
